@@ -26,6 +26,27 @@ class HiperFocoScreenTest {
     val compose = createAndroidComposeRule<MainActivity>()
 
     @Test
+    fun searchesUniversesAndSubtopicsWithoutAccents() {
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(hasText("Buscar universos e subtemas")).fetchSemanticsNodes().isNotEmpty()
+        }
+        val search = compose.onNodeWithTag("busca-interesses")
+        search.performTextReplacement("fosseis")
+        compose.onNodeWithText("Dinossauros").assertIsDisplayed()
+        compose.onNodeWithText("Fósseis e escavações").assertIsDisplayed()
+        compose.onNodeWithText("Linux").assertDoesNotExist()
+
+        search.performTextReplacement("PROGRAMACAO")
+        compose.onNodeWithText("Programação").assertIsDisplayed()
+        compose.onNodeWithText("Dinossauros").assertDoesNotExist()
+
+        search.performTextReplacement("nenhuma correspondência")
+        compose.onNodeWithText("Nenhum resultado encontrado.").assertIsDisplayed()
+        compose.onNodeWithText("Limpar").performClick()
+        compose.onNodeWithText("Astronomia").assertIsDisplayed()
+    }
+
+    @Test
     fun createsAndRenamesTopicThenKeepsItAfterRecreatingActivity() {
         val universe = "Teste ${UUID.randomUUID().toString().take(8)}"
         val openingLabel = "Abrir subtemas de $universe"
@@ -63,7 +84,7 @@ class HiperFocoScreenTest {
     }
 
     private fun saveName(name: String) {
-        compose.onNode(hasSetTextAction()).performTextReplacement(name)
+        compose.onNode(hasSetTextAction() and hasAnyAncestor(isDialog())).performTextReplacement(name)
         compose.onNodeWithText("Salvar").performClick()
     }
 }

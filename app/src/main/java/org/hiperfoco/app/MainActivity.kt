@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -35,17 +37,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.text.Normalizer
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,7 +71,20 @@ private fun HiperFocoScreen(model: HiperFocoViewModel) {
     val editor by model.editor.collectAsStateWithLifecycle()
     val deletion by model.deletion.collectAsStateWithLifecycle()
     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var search by rememberSaveable { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
     val selected = universes?.find { it.universe.id == selectedId }
+    val query = remember(search) { search.trim().searchKey() }
+    val results = remember(universes, query) {
+        universes.orEmpty().mapNotNull { entry ->
+            val matchedTopics = if (query.isEmpty()) emptyList() else entry.topics
+                .filter { it.name.searchKey().contains(query) }
+                .sortedBy { it.id }
+            if (entry.universe.name.searchKey().contains(query) || matchedTopics.isNotEmpty()) {
+                entry.universe to matchedTopics
+            } else null
+        }
+    }
 
     LaunchedEffect(universes, selectedId) {
         if (universes != null && selectedId != null && selected == null) selectedId = null
@@ -105,14 +124,31 @@ private fun HiperFocoScreen(model: HiperFocoViewModel) {
                             ) {
                                 Text("Meus universos", style = MaterialTheme.typography.titleLarge)
                                 Button(onClick = { model.editUniverse() }) { Text("Criar universo") }
-                                if (universes.orEmpty().isEmpty()) Text("Nenhum universo cadastrado.")
+                                OutlinedTextField(
+                                    value = search,
+                                    onValueChange = { search = it },
+                                    label = { Text("Buscar universos e subtemas") },
+                                    modifier = Modifier.fillMaxWidth().testTag("busca-interesses"),
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                                    trailingIcon = if (search.isNotEmpty()) {
+                                        { TextButton(onClick = { search = "" }) { Text("Limpar") } }
+                                    } else null,
+                                )
+                                if (results.isEmpty()) {
+                                    Text(if (query.isEmpty()) "Nenhum universo cadastrado." else "Nenhum resultado encontrado.")
+                                }
                             }
                         }
-                        items(universes.orEmpty(), key = { it.universe.id }) { entry ->
-                            val universe = entry.universe
+                        items(results, key = { it.first.id }) { (universe, matchedTopics) ->
                             InterestCard(
                                 name = universe.name,
-                                onOpen = { selectedId = universe.id },
+                                matchedTopics = matchedTopics,
+                                onOpen = {
+                                    focusManager.clearFocus()
+                                    selectedId = universe.id
+                                },
                                 onEdit = { model.editUniverse(universe) },
                                 onDelete = { model.confirmDelete(universe) },
                             )
@@ -193,10 +229,18 @@ private fun InterestCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onOpen: (() -> Unit)? = null,
+    matchedTopics: List<Topic> = emptyList(),
 ) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
             Text(name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(4.dp))
+            for (topic in matchedTopics) {
+                Text(
+                    topic.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                )
+            }
             FlowRow {
                 if (onOpen != null) {
                     TextButton(
@@ -216,3 +260,8 @@ private fun InterestCard(
         }
     }
 }
+
+private val accentMarks = Regex("\\p{M}+")
+
+private fun String.searchKey(): String =
+    accentMarks.replace(Normalizer.normalize(nameKey(this), Normalizer.Form.NFD), "")

@@ -6,7 +6,8 @@ O HiperFoco é um app Android para organizar interesses especiais. Cada assunto 
 
 1. Na tela **Meus universos**, toque em **Criar universo** e dê um nome ao seu interesse.
 2. Toque em **Abrir subtemas** para dividir o assunto em tópicos menores.
-3. Use **Editar** para renomear um item. Ao confirmar a exclusão de um universo, seus subtemas também são excluídos.
+3. Use **Buscar universos e subtemas** para encontrar um assunto. Por exemplo, digite `fosseis` para encontrar **Dinossauros** pelo subtema **Fósseis e escavações**.
+4. Use **Editar** para renomear um item. Ao confirmar a exclusão de um universo, seus subtemas também são excluídos.
 
 Na primeira abertura, o app traz cinco universos de exemplo. **Linux** inclui terminal, permissões e scripts em Bash. **Dinossauros** inclui períodos, fósseis e o parentesco com as aves. Você pode editar ou excluir os exemplos.
 
