@@ -21,7 +21,7 @@ Na primeira abertura, o app traz cinco universos de exemplo. **Linux** inclui te
 - **Cronômetro de sessão**: ao abrir um universo, inicie o temporizador para acompanhar quanto tempo você está imerso no assunto.
 - **Lembretes de autocuidado**: a cada 15 minutos de sessão, o app exibe um aviso suave sugerindo uma pausa, beber água ou alongar.
 - **Modo escuro**: alterne entre tema claro e escuro no canto superior direito para reduzir estímulos visuais.
-- **Exportar backup**: toque em 💾 para exportar todo o catálogo em JSON e guardar uma cópia dos seus dados.
+- **Exportar backup**: toque em 💾 para gerar o catálogo em JSON, copiar o texto ou compartilhá-lo para guardar uma cópia dos seus dados.
 
 ## Compile e teste
 

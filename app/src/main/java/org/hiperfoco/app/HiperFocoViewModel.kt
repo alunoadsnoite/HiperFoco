@@ -58,8 +58,14 @@ internal class HiperFocoViewModel(application: Application) : AndroidViewModel(a
     val timerSeconds = _timerSeconds.asStateFlow()
     private var timerJob: kotlinx.coroutines.Job? = null
 
+    private val _breakReminder = MutableStateFlow(false)
+    val breakReminder = _breakReminder.asStateFlow()
+
     private val _exportJson = MutableStateFlow<String?>(null)
     val exportJson = _exportJson.asStateFlow()
+
+    private val _exportError = MutableStateFlow<String?>(null)
+    val exportError = _exportError.asStateFlow()
 
     fun editUniverse(universe: Universe? = null) {
         _editor.value = Editor(
@@ -85,8 +91,9 @@ internal class HiperFocoViewModel(application: Application) : AndroidViewModel(a
             name = topic?.name.orEmpty(),
             note = topic?.note,
             save = { name, _, _ ->
-                if (topic == null) dao.insertTopic(Topic(universeId, name)) != -1L
-                else dao.updateTopic(Topic(universeId, name, note = currentNote(), done = topic?.done ?: false, id = topic.id)) > 0
+                val note = currentNote()
+                if (topic == null) dao.insertTopic(Topic(universeId, name, note = note)) != -1L
+                else dao.updateTopic(Topic(universeId, name, note = note, done = topic.done, id = topic.id)) > 0
             },
         )
     }
@@ -175,10 +182,20 @@ internal class HiperFocoViewModel(application: Application) : AndroidViewModel(a
         if (timerJob?.isActive == true) return
         timerJob = viewModelScope.launch {
             while (isActive) {
-                _timerSeconds.value += 1
                 delay(1000)
+                val seconds = _timerSeconds.value + 1
+                _timerSeconds.value = seconds
+                if (seconds > 0 && seconds % BREAK_INTERVAL_SECONDS == 0L) {
+                    _breakReminder.value = true
+                }
             }
         }
+    }
+
+    fun startSession() {
+        _timerSeconds.value = 0
+        _breakReminder.value = false
+        startTimer()
     }
 
     fun stopTimer() {
@@ -189,6 +206,11 @@ internal class HiperFocoViewModel(application: Application) : AndroidViewModel(a
     fun resetTimer() {
         stopTimer()
         _timerSeconds.value = 0
+        _breakReminder.value = false
+    }
+
+    fun dismissBreakReminder() {
+        _breakReminder.value = false
     }
 
     fun formatTime(seconds: Long): String {
@@ -228,10 +250,44 @@ internal class HiperFocoViewModel(application: Application) : AndroidViewModel(a
 
     fun requestExport() {
         viewModelScope.launch {
-            _exportJson.value = exportToJson()
+            _exportJson.value = try {
+                exportToJson()
+            } catch (_: Exception) {
+                _exportError.value = "Não foi possível gerar o backup. Tente novamente."
+                null
+            }
         }
     }
 
-    private fun quote(value: String?): String =
-        if (value == null) "null" else "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+    fun clearExport() {
+        _exportJson.value = null
+        _exportError.value = null
+    }
+
+    private fun quote(value: String?): String {
+        if (value == null) return "null"
+        val escaped = buildString {
+            for (character in value) {
+                when (character) {
+                    '\\' -> append("\\\\")
+                    '"' -> append("\\\"")
+                    '\n' -> append("\\n")
+                    '\r' -> append("\\r")
+                    '\t' -> append("\\t")
+                    '\b' -> append("\\b")
+                    '\u000C' -> append("\\f")
+                    else -> if (character < ' ') {
+                        append("\\u%04x".format(character.code))
+                    } else {
+                        append(character)
+                    }
+                }
+            }
+        }
+        return "\"$escaped\""
+    }
+
+    private companion object {
+        private const val BREAK_INTERVAL_SECONDS = 900L
+    }
 }

@@ -1,5 +1,6 @@
 package org.hiperfoco.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -28,8 +29,11 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -56,6 +60,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
@@ -70,8 +75,9 @@ import java.text.Normalizer
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val preferences = getSharedPreferences("hiperfoco", MODE_PRIVATE)
         setContent {
-            var darkMode by rememberSaveable { mutableStateOf(false) }
+            var darkMode by rememberSaveable { mutableStateOf(preferences.getBoolean("darkMode", false)) }
             val colorScheme = if (darkMode) {
                 darkColorScheme(primary = Color(0xFF9F86C0), surface = Color(0xFF1E1E1E))
             } else {
@@ -81,7 +87,10 @@ class MainActivity : ComponentActivity() {
                 HiperFocoScreen(
                     viewModel(),
                     darkMode,
-                    { darkMode = it },
+                    { enabled ->
+                        darkMode = enabled
+                        preferences.edit().putBoolean("darkMode", enabled).apply()
+                    },
                 )
             }
         }
@@ -98,7 +107,9 @@ class MainActivity : ComponentActivity() {
         val editor by model.editor.collectAsStateWithLifecycle()
         val deletion by model.deletion.collectAsStateWithLifecycle()
         val timerSeconds by model.timerSeconds.collectAsStateWithLifecycle()
+        val breakReminder by model.breakReminder.collectAsStateWithLifecycle()
         val exportJson by model.exportJson.collectAsStateWithLifecycle()
+        val exportError by model.exportError.collectAsStateWithLifecycle()
         var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
         var search by rememberSaveable { mutableStateOf("") }
         val focusManager = LocalFocusManager.current
@@ -116,9 +127,15 @@ class MainActivity : ComponentActivity() {
         }
 
         LaunchedEffect(universes, selectedId) {
-            if (universes != null && selectedId != null && selected == null) selectedId = null
+            if (universes != null && selectedId != null && selected == null) {
+                selectedId = null
+                model.stopTimer()
+            }
         }
-        BackHandler(enabled = selectedId != null) { selectedId = null }
+        BackHandler(enabled = selectedId != null) {
+            selectedId = null
+            model.stopTimer()
+        }
 
         var showExportDialog by remember { mutableStateOf(false) }
         LaunchedEffect(exportJson) {
@@ -207,7 +224,7 @@ class MainActivity : ComponentActivity() {
                                     matchedTopics = matchedTopics,
                                     onOpen = {
                                         focusManager.clearFocus()
-                                        model.startTimer()
+                                        model.startSession()
                                         selectedId = universe.id
                                     },
                                     onEdit = { model.editUniverse(universe) },
@@ -244,16 +261,20 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                     if (selected.topics.isEmpty()) Text("Nenhum subtema cadastrado.")
-                                    if (timerSeconds > 0 && timerSeconds % 900L == 0L) {
+                                    if (breakReminder) {
                                         Card(
                                             modifier = Modifier.fillMaxWidth(),
                                         ) {
-                                            Text(
-                                                "Lembrete: já faz ${model.formatTime(timerSeconds)} que você está neste universo. " +
-                                                "Que tal beber água, alongar ou fazer uma pausa?",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                modifier = Modifier.padding(12.dp),
-                                            )
+                                            Column(Modifier.padding(12.dp)) {
+                                                Text(
+                                                    "Lembrete: já faz ${model.formatTime(timerSeconds)} que você está neste universo. " +
+                                                    "Que tal beber água, alongar ou fazer uma pausa?",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                )
+                                                TextButton(onClick = model::dismissBreakReminder) {
+                                                    Text("Entendi")
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -353,7 +374,22 @@ class MainActivity : ComponentActivity() {
         if (showExportDialog && json != null) {
             ExportDialog(
                 json = json,
-                onDismiss = { showExportDialog = false },
+                onDismiss = {
+                    showExportDialog = false
+                    model.clearExport()
+                },
+            )
+        }
+
+        exportError?.let { message ->
+            AlertDialog(
+                onDismissRequest = model::clearExport,
+                title = { Text("Exportar backup") },
+                text = { Text(message) },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = model::clearExport) { Text("Fechar") }
+                },
             )
         }
     }
@@ -370,7 +406,7 @@ class MainActivity : ComponentActivity() {
                 val isSelected = selected == emoji
                 Box(
                     modifier = Modifier
-                        .requiredSize(36.dp)
+                        .requiredSize(48.dp)
                         .background(
                             if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Unspecified,
                             shape = CircleShape,
@@ -419,7 +455,7 @@ class MainActivity : ComponentActivity() {
                 val isSelected = selected == color
                 Box(
                     modifier = Modifier
-                        .requiredSize(28.dp)
+                        .requiredSize(44.dp)
                         .background(Color(color), shape = CircleShape)
                         .border(
                             if (isSelected) 2.dp else 0.dp,
@@ -450,7 +486,8 @@ class MainActivity : ComponentActivity() {
         onDelete: () -> Unit,
     ) {
         Card(
-            Modifier.fillMaxWidth(),
+            Modifier.fillMaxWidth()
+                .border(2.dp, Color(color), MaterialTheme.shapes.medium),
         ) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
                 Row(
@@ -531,19 +568,37 @@ class MainActivity : ComponentActivity() {
         json: String,
         onDismiss: () -> Unit,
     ) {
+        val context = LocalContext.current
         AlertDialog(
             onDismissRequest = onDismiss,
             title = { Text("Exportar backup (JSON)") },
             text = {
-                Column(modifier = Modifier.fillMaxWidth().heightIn(min = 200.dp)) {
-                    Text(
-                        text = json,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                        .heightIn(min = 200.dp, max = 360.dp)
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    SelectionContainer {
+                        Text(
+                            text = json,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
             },
-            confirmButton = {},
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_SUBJECT, "Backup HiperFoco")
+                            putExtra(Intent.EXTRA_TEXT, json)
+                        }
+                        context.startActivity(Intent.createChooser(intent, "Compartilhar backup"))
+                    },
+                ) { Text("Compartilhar") }
+            },
             dismissButton = {
                 TextButton(onClick = onDismiss) { Text("Fechar") }
             },

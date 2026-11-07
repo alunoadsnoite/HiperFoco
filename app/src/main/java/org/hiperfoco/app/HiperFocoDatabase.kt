@@ -88,9 +88,9 @@ internal interface UniverseDao {
 val MIGRATION_1_2 = object : androidx.room.migration.Migration(1, 2) {
     override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE universes ADD COLUMN icon TEXT")
-        db.execSQL("ALTER TABLE universes ADD COLUMN color INTEGER DEFAULT 0xFF6554A4")
+        db.execSQL("ALTER TABLE universes ADD COLUMN color INTEGER NOT NULL DEFAULT 0xFF6554A4")
         db.execSQL("ALTER TABLE topics ADD COLUMN note TEXT")
-        db.execSQL("ALTER TABLE topics ADD COLUMN done INTEGER DEFAULT 0")
+        db.execSQL("ALTER TABLE topics ADD COLUMN done INTEGER NOT NULL DEFAULT 0")
     }
 }
 
