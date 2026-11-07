@@ -6,40 +6,66 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
+    <!-- Estrelinhas ao redor (estilo emoji espacial) -->
     <path
-        android:fillColor="#F1E7FF"
-        android:pathData="M34,32 L35.6,36.4 L40,38 L35.6,39.6 L34,44 L32.4,39.6 L28,38 L32.4,36.4 Z M73,67 L74.3,70.7 L78,72 L74.3,73.3 L73,77 L71.7,73.3 L68,72 L71.7,70.7 Z" />
+        android:fillColor="#FFFFFF"
+        android:pathData="M74,22 L76,24 L78,22 L77,26 L75,28 L73,26 Z M22,76 L24,78 L22,80 L23,82 L21,84 L19,82 Z M90,86 L92,88 L90,90 L91,92 L89,94 L87,92 Z M18,18 L20,20 L18,22 L19,24 L17,26 L15,24 Z M88,24 L90,26 L88,28 L89,30 L87,32 L85,30 Z M20,88 L22,90 L20,92 L21,94 L19,96 L17,94 Z" />
 
-    <group android:pivotX="54" android:pivotY="54" android:rotation="-26">
-        <path
-            android:pathData="M24,54 C24,48 37.4,43 54,43 C70.6,43 84,48 84,54"
-            android:strokeColor="#E79783"
-            android:strokeLineCap="round"
-            android:strokeWidth="4" />
-    </group>
-
-    <path android:pathData="M54,34 A20,20 0 1,1 54,74 A20,20 0 1,1 54,34 Z">
+    <!-- Planeta (corpo principal) -->
+    <path
+        android:pathData="M54,40 C42,40 32,50 32,62 C32,74 42,84 54,84 C66,84 76,74 76,62 C76,50 66,40 54,40 Z">
         <aapt:attr name="android:fillColor">
             <gradient
-                android:startX="41" android:startY="37"
-                android:endX="68" android:endY="72"
-                android:startColor="#E4C8FF" android:endColor="#8F65D7" />
+                android:type="radial"
+                android:startX="54"
+                android:startY="60"
+                android:endX="54"
+                android:endY="60"
+                android:gradientRadius="26">
+                <item
+                    android:color="#9F86C0"
+                    android:offset="0" />
+                <item
+                    android:color="#6A1B9A"
+                    android:offset="1" />
+            </gradient>
         </aapt:attr>
     </path>
 
+    <!-- Brilho no planeta -->
     <path
         android:fillColor="#FFFFFF"
-        android:fillAlpha="0.28"
-        android:pathData="M39,48 C43,40 53,37 61,41 C53,41 46,44 41,50 C40,51 38,50 39,48 Z" />
+        android:fillAlpha="0.35"
+        android:pathData="M42,50 C40,46 46,42 52,44 C46,42 40,48 42,52 Z" />
 
-    <group android:pivotX="54" android:pivotY="54" android:rotation="-26">
-        <path android:pathData="M24,54 C24,60 37.4,65 54,65 C70.6,65 84,60 84,54" android:strokeWidth="5" android:strokeLineCap="round">
+    <!-- Anéis ao redor do planeta (estilo Saturno/🪐) -->
+    <group android:pivotX="54" android:pivotY="62" android:rotation="-28">
+        <path
+            android:pathData="M28,62 C28,56 42,52 54,52 C66,52 80,56 80,62 C80,68 66,72 54,72 C42,72 28,68 28,62 Z"
+            android:strokeWidth="7"
+            android:strokeLineCap="round">
             <aapt:attr name="android:strokeColor">
                 <gradient
-                    android:startX="24" android:startY="54"
-                    android:endX="84" android:endY="54"
-                    android:startColor="#FFAD98" android:endColor="#FFF0BD" />
+                    android:startX="28"
+                    android:startY="62"
+                    android:endX="80"
+                    android:endY="62"
+                    android:startColor="#FFAD98"
+                    android:endColor="#FFF0BD" />
             </aapt:attr>
         </path>
+        <path
+            android:pathData="M24,62 C24,58 38,54 50,54 C62,54 76,58 76,62 C76,66 62,70 50,70 C38,70 24,66 24,62 Z"
+            android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:strokeColor="#FFD54F"
+            android:strokeAlpha="0.85" />
     </group>
+
+    <!-- Sombra suave ao redor para destaque -->
+    <path
+        android:fillColor="#000000"
+        android:fillAlpha="0.12"
+        android:pathData="M54,40 C42,40 32,50 32,62 C32,74 42,84 54,84 C66,84 76,74 76,62 C76,50 66,40 54,40 Z" />
+
 </vector>
