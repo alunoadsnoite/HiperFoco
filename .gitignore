@@ -1,0 +1,10 @@
+.gradle/
+.kotlin/
+.idea/
+build/
+**/build/
+local.properties
+*.iml
+*.apk
+*.aab
+HiperFoco-0.1.0-projeto.zip
