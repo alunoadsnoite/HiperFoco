@@ -2,6 +2,8 @@
 
 O HiperFoco é um app Android para organizar interesses especiais. Cada assunto ganha um **universo**, e cada universo reúne os **subtemas** que você quer explorar. Os dados ficam no aparelho e o app funciona offline.
 
+Pensado para pessoas autistas, o app ajuda a catalogar seu hiperfoco com recursos de acessibilidade e autorregulação.
+
 ## Comece por um universo
 
 1. Na tela **Meus universos**, toque em **Criar universo** e dê um nome ao seu interesse.
@@ -10,6 +12,16 @@ O HiperFoco é um app Android para organizar interesses especiais. Cada assunto 
 4. Use **Editar** para renomear um item. Ao confirmar a exclusão de um universo, seus subtemas também são excluídos.
 
 Na primeira abertura, o app traz cinco universos de exemplo. **Linux** inclui terminal, permissões e scripts em Bash. **Dinossauros** inclui períodos, fósseis e o parentesco com as aves. Você pode editar ou excluir os exemplos.
+
+## Recursos de acessibilidade
+
+- **Ícone e cor por universo**: ao criar ou editar um universo, escolha um emoji e uma cor para identificá-lo visualmente de imediato.
+- **Nota / descrição nos subtemas**: anote fatos, links e citações dentro de cada subtema para não perder nenhum detalhe do seu interesse.
+- **Subtemas concluídos**: marque os subtemas já explorados com o checkbox, dando sensação de progresso e fechamento.
+- **Cronômetro de sessão**: ao abrir um universo, inicie o temporizador para acompanhar quanto tempo você está imerso no assunto.
+- **Lembretes de autocuidado**: a cada 15 minutos de sessão, o app exibe um aviso suave sugerindo uma pausa, beber água ou alongar.
+- **Modo escuro**: alterne entre tema claro e escuro no canto superior direito para reduzir estímulos visuais.
+- **Exportar backup**: toque em 💾 para exportar todo o catálogo em JSON e guardar uma cópia dos seus dados.
 
 ## Compile e teste
 
@@ -27,7 +39,7 @@ No Windows, use `gradlew.bat` no lugar de `./gradlew`. A primeira compilação b
 ## Como o app é feito
 
 - **Kotlin e Jetpack Compose** para a interface.
-- **Room** para armazenar universos e subtemas no aparelho.
+- **Room** para armazenar universos e subtemas no aparelho (com migração automática do banco).
 - **ViewModel e StateFlow** para refletir as alterações na tela.
 - **Robolectric** para testar a persistência, a exclusão em cascata e o fluxo de criação e edição de subtemas.
 

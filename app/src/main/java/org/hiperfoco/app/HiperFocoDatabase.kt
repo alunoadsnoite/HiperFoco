@@ -26,6 +26,8 @@ internal fun nameKey(name: String): String = name.lowercase(Locale.ROOT)
 internal data class Universe(
     val name: String,
     val nameKey: String = nameKey(name),
+    val icon: String? = null,
+    val color: Long = 0xFF6554A4,
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
 )
 
@@ -45,6 +47,8 @@ internal data class Topic(
     val universeId: Long,
     val name: String,
     val nameKey: String = nameKey(name),
+    val note: String? = null,
+    val done: Boolean = false,
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
 )
 
@@ -76,9 +80,21 @@ internal interface UniverseDao {
 
     @Query("DELETE FROM topics WHERE id = :id")
     suspend fun deleteTopic(id: Long)
+
+    @Query("UPDATE topics SET done = :done WHERE id = :id")
+    suspend fun toggleTopicDone(id: Long, done: Boolean)
 }
 
-@Database(entities = [Universe::class, Topic::class], version = 1)
+val MIGRATION_1_2 = object : androidx.room.migration.Migration(1, 2) {
+    override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE universes ADD COLUMN icon TEXT")
+        db.execSQL("ALTER TABLE universes ADD COLUMN color INTEGER DEFAULT 0xFF6554A4")
+        db.execSQL("ALTER TABLE topics ADD COLUMN note TEXT")
+        db.execSQL("ALTER TABLE topics ADD COLUMN done INTEGER DEFAULT 0")
+    }
+}
+
+@Database(entities = [Universe::class, Topic::class], version = 2)
 internal abstract class HiperFocoDatabase : RoomDatabase() {
     abstract fun universeDao(): UniverseDao
 
@@ -120,14 +136,14 @@ internal abstract class HiperFocoDatabase : RoomDatabase() {
                         for ((universe, topics) in examples) {
                             val universeKey = nameKey(universe)
                             db.execSQL(
-                                "INSERT INTO universes (name, nameKey) VALUES (?, ?)",
-                                arrayOf(universe, universeKey),
+                                "INSERT INTO universes (name, nameKey, icon, color) VALUES (?, ?, ?, ?)",
+                                arrayOf<Any?>(universe, universeKey, null, 0xFF6554A4L),
                             )
                             for (topic in topics) {
                                 db.execSQL(
                                     """
-                                    INSERT INTO topics (universeId, name, nameKey)
-                                    SELECT id, ?, ? FROM universes WHERE nameKey = ?
+                                    INSERT INTO topics (universeId, name, nameKey, note, done)
+                                    SELECT id, ?, ?, NULL, 0 FROM universes WHERE nameKey = ?
                                     """.trimIndent(),
                                     arrayOf(topic, nameKey(topic), universeKey),
                                 )
@@ -135,6 +151,7 @@ internal abstract class HiperFocoDatabase : RoomDatabase() {
                         }
                     }
                 })
+                .addMigrations(MIGRATION_1_2)
                 .build()
         }
     }

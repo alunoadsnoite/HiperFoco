@@ -84,7 +84,7 @@ class HiperFocoScreenTest {
     }
 
     private fun saveName(name: String) {
-        compose.onNode(hasSetTextAction() and hasAnyAncestor(isDialog())).performTextReplacement(name)
+        compose.onNodeWithTag("campo-nome").performTextReplacement(name)
         compose.onNodeWithText("Salvar").performClick()
     }
 }
