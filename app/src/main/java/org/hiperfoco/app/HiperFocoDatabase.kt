@@ -112,25 +112,26 @@ internal abstract class HiperFocoDatabase : RoomDatabase() {
             return Room.databaseBuilder(context, HiperFocoDatabase::class.java, name)
                 .addCallback(object : Callback() {
                     override fun onCreate(db: SupportSQLiteDatabase) {
+                        val resources = AppLanguage.context(context).resources
                         val examples = mapOf(
-                            "Astronomia" to emptyList(),
-                            "Programação" to emptyList(),
-                            "História" to emptyList(),
-                            "Linux" to listOf(
-                                "Distribuições: Fedora, Ubuntu e Debian",
-                                "Terminal e comandos básicos",
-                                "Arquivos e permissões",
-                                "Pacotes e atualizações",
-                                "Serviços e logs",
-                                "Scripts em Bash",
+                            resources.getString(R.string.seed_astronomy) to emptyList(),
+                            resources.getString(R.string.seed_programming) to emptyList(),
+                            resources.getString(R.string.seed_history) to emptyList(),
+                            resources.getString(R.string.seed_linux) to listOf(
+                                resources.getString(R.string.seed_distros),
+                                resources.getString(R.string.seed_terminal),
+                                resources.getString(R.string.seed_files),
+                                resources.getString(R.string.seed_packages),
+                                resources.getString(R.string.seed_services),
+                                resources.getString(R.string.seed_bash),
                             ),
-                            "Dinossauros" to listOf(
-                                "Períodos: Triássico, Jurássico e Cretáceo",
-                                "Dinossauros famosos: T. rex, Triceratops e Stegosaurus",
-                                "Alimentação e habitats",
-                                "Fósseis e escavações",
-                                "Extinção no fim do Cretáceo",
-                                "Evolução e parentesco com as aves",
+                            resources.getString(R.string.seed_dinosaurs) to listOf(
+                                resources.getString(R.string.seed_periods),
+                                resources.getString(R.string.seed_famous),
+                                resources.getString(R.string.seed_habitats),
+                                resources.getString(R.string.seed_fossils),
+                                resources.getString(R.string.seed_extinction),
+                                resources.getString(R.string.seed_evolution),
                             ),
                         )
                         for ((universe, topics) in examples) {

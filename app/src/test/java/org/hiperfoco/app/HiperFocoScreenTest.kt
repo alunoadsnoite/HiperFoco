@@ -7,6 +7,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -24,6 +25,24 @@ import java.util.UUID
 class HiperFocoScreenTest {
     @get:Rule
     val compose = createAndroidComposeRule<MainActivity>()
+
+    @Test
+    fun changesLanguageFromSettingsAndKeepsItAfterRecreation() {
+        val scenario = compose.activityRule.scenario
+        try {
+            compose.onNodeWithContentDescription("Configurações").performClick()
+            compose.onNodeWithText("English (US)").performClick()
+            compose.onNodeWithText("Language").assertIsDisplayed()
+            scenario.recreate()
+            compose.onNodeWithText("Language").assertIsDisplayed()
+            compose.onNodeWithText("Español").performClick()
+            compose.onNodeWithText("Idioma").assertIsDisplayed()
+            compose.onNodeWithText("Cerrar").performClick()
+            compose.onNodeWithText("Crear universo").assertIsDisplayed()
+        } finally {
+            scenario.onActivity { AppLanguage.PORTUGUESE.save(it) }
+        }
+    }
 
     @Test
     fun searchesUniversesAndSubtopicsWithoutAccents() {

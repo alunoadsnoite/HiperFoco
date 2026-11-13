@@ -46,3 +46,7 @@ No Windows, use `gradlew.bat` no lugar de `./gradlew`. A primeira compilação b
 ## Licença
 
 Distribuído sob a GPL-3.0-or-later. Consulte o arquivo [LICENSE](LICENSE).
+
+### Idioma
+
+Abra **Configurações** pelo ícone de engrenagem e escolha **Português (Brasil)**, **English (US)** ou **Español**. A escolha fica salva no aparelho. Os nomes e as notas já gravados no banco permanecem como foram salvos. Os exemplos são criados no idioma ativo na primeira abertura do banco.

@@ -31,21 +31,23 @@ internal class HiperFocoViewModel(application: Application) : AndroidViewModel(a
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     data class Editor(
-        val title: String,
+        @androidx.annotation.StringRes val title: Int,
+        val isUniverse: Boolean,
         val name: String,
         val icon: String? = null,
         val color: Long = 0xFF6554A4,
         val note: String? = null,
         val save: suspend (String, String?, Long) -> Boolean,
         val saving: Boolean = false,
-        val error: String? = null,
+        @androidx.annotation.StringRes val error: Int? = null,
     )
 
     data class Deletion(
-        val message: String,
+        @androidx.annotation.StringRes val message: Int,
+        val name: String,
         val delete: suspend () -> Unit,
         val saving: Boolean = false,
-        val error: String? = null,
+        @androidx.annotation.StringRes val error: Int? = null,
     )
 
     private val _editor = MutableStateFlow<Editor?>(null)
@@ -64,12 +66,13 @@ internal class HiperFocoViewModel(application: Application) : AndroidViewModel(a
     private val _exportJson = MutableStateFlow<String?>(null)
     val exportJson = _exportJson.asStateFlow()
 
-    private val _exportError = MutableStateFlow<String?>(null)
+    private val _exportError = MutableStateFlow<Int?>(null)
     val exportError = _exportError.asStateFlow()
 
     fun editUniverse(universe: Universe? = null) {
         _editor.value = Editor(
-            title = if (universe == null) "Novo universo" else "Editar universo",
+            title = if (universe == null) R.string.new_universe else R.string.edit_universe,
+            isUniverse = true,
             name = universe?.name.orEmpty(),
             icon = universe?.icon,
             color = universe?.color ?: 0xFF6554A4,
@@ -87,7 +90,8 @@ internal class HiperFocoViewModel(application: Application) : AndroidViewModel(a
 
     fun editTopic(universeId: Long, topic: Topic? = null) {
         _editor.value = Editor(
-            title = if (topic == null) "Novo subtema" else "Editar subtema",
+            title = if (topic == null) R.string.new_topic else R.string.edit_topic,
+            isUniverse = false,
             name = topic?.name.orEmpty(),
             note = topic?.note,
             save = { name, _, _ ->
@@ -119,9 +123,9 @@ internal class HiperFocoViewModel(application: Application) : AndroidViewModel(a
         viewModelScope.launch {
             _editor.value = try {
                 if (current.save(name, current.icon, current.color)) null
-                else current.copy(error = "Já existe um item com esse nome.")
+                else current.copy(error = R.string.duplicate_name)
             } catch (_: SQLiteException) {
-                current.copy(error = "Não foi possível salvar. Tente novamente.")
+                current.copy(error = R.string.save_error)
             }
         }
     }
@@ -142,14 +146,16 @@ internal class HiperFocoViewModel(application: Application) : AndroidViewModel(a
 
     fun confirmDelete(universe: Universe) {
         _deletion.value = Deletion(
-            message = "Excluir “${universe.name}” e todos os seus subtemas?",
+            message = R.string.delete_universe_prompt,
+            name = universe.name,
             delete = { dao.deleteUniverse(universe.id) },
         )
     }
 
     fun confirmDelete(topic: Topic) {
         _deletion.value = Deletion(
-            message = "Excluir o subtema “${topic.name}”?",
+            message = R.string.delete_topic_prompt,
+            name = topic.name,
             delete = { dao.deleteTopic(topic.id) },
         )
     }
@@ -167,7 +173,7 @@ internal class HiperFocoViewModel(application: Application) : AndroidViewModel(a
                 current.delete()
                 null
             } catch (_: SQLiteException) {
-                current.copy(error = "Não foi possível excluir. Tente novamente.")
+                current.copy(error = R.string.delete_error)
             }
         }
     }
@@ -223,7 +229,7 @@ internal class HiperFocoViewModel(application: Application) : AndroidViewModel(a
     suspend fun exportToJson(): String {
         val universes: List<UniverseWithTopics> = dao.observeUniverses().first()
         val builder = StringBuilder()
-        val date = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(java.util.Date())
+        val date = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT).format(java.util.Date())
         builder.append("{\n")
         builder.append("  \"exportedAt\": \"$date\",\n")
         builder.append("  \"universes\": [\n")
@@ -253,7 +259,7 @@ internal class HiperFocoViewModel(application: Application) : AndroidViewModel(a
             _exportJson.value = try {
                 exportToJson()
             } catch (_: Exception) {
-                _exportError.value = "Não foi possível gerar o backup. Tente novamente."
+                _exportError.value = R.string.export_error
                 null
             }
         }
